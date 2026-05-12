@@ -119,6 +119,8 @@ class FireCore:
         for _ in range(DASH_DIST):
             nr = max(0, min(ROWS-1, self.r + self.last_dr))
             nc = max(0, min(COLS-1, self.c + self.last_dc))
+            if grid[nr][nc].state not in (BURNING, BURNABLE):
+                break
             pts, expl = self._force_enter(nr, nc, grid)
             score += pts
             explosions.extend(expl)

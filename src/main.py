@@ -6,13 +6,13 @@ from constants import (
     WIN_W, WIN_H, CELL_SIZE, ROWS, COLS,
     WIND_INTERVAL, WIND_DIRS, WIND_STRS,
     FUEL_MAX, FUEL_DECAY, TEMP_BASE,
-    ENERGY_TO_FUEL, ENERGY_TO_TEMP, BURNING,
+    ENERGY_TO_FUEL, ENERGY_TO_TEMP, BURNING, MATS,
 )
 from worldgen import generate_city, find_start
 from fire_core import FireCore
 from simulation import update, apply_explosion, calc_core_gains
 from cell import ignite
-from ui import draw_ui
+from ui import draw_ui, draw_vignette
 from firefighter import (
     FireTruck, spawn_truck, count_burning_blocks,
     MAX_TRUCKS, SPAWN_INTERVAL, RETREAT_THR,
@@ -143,6 +143,17 @@ def draw_frame(screen, font, font_big, grid, sparks, core, fire_trucks, score, o
     for sp in sparks:
         sp.draw(screen)
     core.draw(screen)
+
+    cell = grid[core.r][core.c]
+    if cell.state == BURNING:
+        max_bt = MATS.get(cell.material, {}).get("burn_time", 3.0)
+        vignette_ratio = min(1.0, cell.burn_t / max_bt) if max_bt > 0 else 1.0
+    else:
+        vignette_ratio = 0.0
+    cx_px = core.c * CELL_SIZE + CELL_SIZE // 2
+    cy_px = core.r * CELL_SIZE + CELL_SIZE // 2
+    draw_vignette(screen, cx_px, cy_px, vignette_ratio)
+
     draw_ui(screen, font, font_big, score, core, over,
             wind, wind_str, wind_timer, flash, chains, death_cause)
     pygame.display.flip()

@@ -1,7 +1,7 @@
 import math
 import pygame
 from constants import (
-    GRID_H, WIN_W, WIN_H, UI_H, FUEL_MAX,
+    GRID_H, WIN_W, WIN_H, UI_H, FUEL_MAX, CELL_SIZE,
     DASH_COOLDOWN, SPARK_COOLDOWN, MATS, MAT_ORDER, WIND_NAMES,
 )
 
@@ -40,6 +40,46 @@ def draw_arrow(surf, color, cx, cy, dx, dy, length=16):
         ax = ex - math.cos(ang+da)*7
         ay = ey - math.sin(ang+da)*7
         pygame.draw.line(surf, color, (int(ex), int(ey)), (int(ax), int(ay)), 2)
+
+
+def draw_vignette(screen, cx, cy, ratio):
+    """Dark vignette + shrinking spotlight circle as the current cell's burn time runs out.
+
+    ratio: 1.0 = freshly burning (no effect), 0.0 = cell about to burn out (max effect).
+    The gradient is quadratic so the effect stays subtle until the last ~30% of burn time.
+    """
+    t = max(0.0, 1.0 - ratio)
+    t2 = t * t  # quadratic: barely noticeable early, accelerates near the end
+    darkness = int(200 * t2)
+    if darkness < 4:
+        return
+
+    # Visible circle: shrinks from 520 px (covers the grid) to 2 cells wide
+    max_r = 520
+    min_r = CELL_SIZE * 2
+    visible_r = max(min_r, int(max_r + (min_r - max_r) * t2))
+
+    # Dark overlay covering the whole grid area
+    dark = pygame.Surface((WIN_W, GRID_H), pygame.SRCALPHA)
+    dark.fill((0, 0, 0, darkness))
+
+    # Spotlight: gradient circle where alpha = darkness at centre → 0 at edge.
+    # Drawing from outermost (alpha=0) to innermost (alpha=darkness) means each
+    # subsequent circle overwrites the inner region with higher alpha, giving the
+    # correct radial gradient: alpha(r) ≈ darkness * (1 − r / visible_r).
+    # BLEND_RGBA_SUB then subtracts this from the dark overlay, making the centre
+    # transparent and the outer ring fully dark.
+    diam = visible_r * 2 + 1
+    spot = pygame.Surface((diam, diam), pygame.SRCALPHA)
+    spot.fill((0, 0, 0, 0))
+    steps = 20
+    for i in range(steps + 1):
+        r = visible_r * (steps - i) // steps
+        a = darkness * i // steps
+        pygame.draw.circle(spot, (0, 0, 0, a), (visible_r, visible_r), r)
+    dark.blit(spot, (cx - visible_r, cy - visible_r), special_flags=pygame.BLEND_RGBA_SUB)
+
+    screen.blit(dark, (0, 0))
 
 
 def draw_ui(screen, font, font_big, score, core, over, wind, wind_str, wind_timer, flash, chains, death_cause=""):
