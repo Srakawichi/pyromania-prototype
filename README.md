@@ -1,21 +1,15 @@
-# 🔥 PYROMANIA
+# PYROMANIA
 
-**Resource management · Chain reaction · Destruction sandbox**
-
-Du startest als winzige Glut – eine Zigarette, ein Funke – mitten in einer prozedurale generierten Stadt. Dein Ziel: das Feuer am Leben halten, Temperatur aufbauen und eine endlose Kettenreaktion auslösen.
+Du bist eine Feuerkreatur. Friss dich durch eine prozedurale Stadt, halte dein Feuer am Leben und löse Kettenreaktionen aus — bevor die Feuerwehr dich löscht. (Es handelt sich hierbei um dem Prototypen)
 
 ---
 
-## Gameplay
+## Ziel
 
-Das Feuer hat zwei Ressourcen, die du im Blick behalten musst:
+Bleib auf brennenden Zellen, sonst erlischt dein Feuer. Zwei Ressourcen halten dich am Leben:
 
-| Ressource | Beschreibung |
-|-----------|--------------|
-| **FUEL** | Energie des Feuers. Läuft konstant ab – brennende Materialien füllen es auf. Sinkt auf 0 → Game Over. |
-| **TEMP** | Temperatur des Feuers. Bestimmt, welche Materialien entzündbar sind. Je heißer, desto mehr ist zugänglich. |
-
-Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit neuem Brennmaterial versorgen.
+- **FUEL** — brennende Materialien füllen es auf. Fällt es auf 0: Game Over.
+- **TEMP** — bestimmt, welche Materialien du entzünden kannst. Je heißer, desto mehr Targets.
 
 ---
 
@@ -23,54 +17,60 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
 
 | Taste | Aktion |
 |-------|--------|
-| **WASD / Pfeiltasten** | Feuer in eine Richtung lenken (Push) |
-| **R** | Neues Spiel |
-
-Der **Push** verstärkt die Ausbreitungswahrscheinlichkeit in die gedrückte Richtung stark und reduziert sie in die entgegengesetzte Richtung.
-
----
-
-## Materialien
-
-Die Materialien sind nach Temperaturanforderung gestaffelt. Die Legende im UI zeigt live, was bei deiner aktuellen Temperatur erreichbar ist.
-
-| Material | Min-Temp | Besonderheit |
-|----------|----------|--------------|
-| Gras | 10 | Schnell entflammbar, wenig Temp-Boost – gut zum Überleben am Anfang |
-| Öl | 20 | Explosion (Radius 4), starker Temp-Boost |
-| Baum | 28 | Brennt lange, solider Fuel-Lieferant |
-| Holz | 35 | Stabiler Midgame-Brennstoff |
-| Auto | 42 | Explosion (Radius 3) |
-| Haus | 55 | Brennt sehr lange, hohe Punktzahl |
-| Tankstelle | 20 | Explosion (Radius 8) – massiver Boost, hohe Punktzahl |
-
-**Explosionen** zünden alle brennbaren Zellen im Radius sofort und geben Bonus-Punkte.
+| `WASD` | Bewegen (nur auf brennenden Zellen) |
+| `SHIFT` | Sprint (kostet FUEL) |
+| `SPACE` | Flame Dash — 3 Felder vorwärts, zündet BURNABLE (2s Cooldown) |
+| `F` | Spark Shot — Funke in Blickrichtung, zündet oder teleportiert (kostet 25 FUEL) |
+| `R` | Neues Spiel |
 
 ---
 
-## Externe Faktoren
+## Targets & Materialien
 
-- **Wind**: Zufällige Richtung und Stärke, wechselt alle 20 Sekunden. Im UI als Pfeil und Countdown sichtbar. Kombiniert mit Push für maximale Reichweite.
-- **Stadtlayout**: Jeder Run generiert eine neue Stadt mit Wohngebieten, Parks und Industrieblöcken – unterschiedliche Materialdichten erzwingen unterschiedliche Strategien.
+Die Legende unten im UI zeigt live, welche Materialien bei deiner aktuellen Temperatur erreichbar sind.
+
+| Material | Besonderheit |
+|----------|--------------|
+| **Gras** | Leicht entflammbar, schnell verbrannt — gut zum Starten |
+| **Öl** | Explosion (Radius 4), auch auf Straßen zu finden |
+| **Baum** | Brennt lang, solider Fuel-Lieferant |
+| **Holz** | Stabiler Midgame-Brennstoff |
+| **Auto** | Explosion (Radius 1) — oft neben Öl platziert |
+| **Haus** | Brennt sehr lange, hohe Punktzahl |
+| **Schrott** | Braucht extreme Hitze (900°C), hohe Punktzahl, Explosion (Radius 2) |
+| **Tankstelle** | Massivste Explosion (Radius 8) — High-Risk-High-Reward |
+
+Explosionen zünden sofort alle brennbaren Zellen im Radius und geben Bonus-Punkte.
 
 ---
 
-## Strategie-Tipps
+## Features
 
-1. **Starte auf Gras** – niedrige Temp-Anforderung, schnell entflammbar, gibt dir Zeit zum Aufbauen.
-2. **Baue Temp auf** – erst mit genug Hitze brennen Holz und Häuser.
-3. **Nutze Öl früh** – Öl ist schon bei Starttemperatur zugänglich und katapultiert deine Temp nach oben.
-4. **Plane Kettenreaktionen** – Auto → Tankstelle → ganzer Block.
-5. **Beobachte den Wind** – mit Wind im Rücken breitet sich das Feuer viel schneller aus.
-6. **FUEL zuerst** – eine brennende Hausreihe kann das Feuer minutenlang am Leben halten.
+- **Prozedurales Stadtlayout** — Parks, Wohngebiete (dicht/locker), Industrie, Downtown
+- **Wind** — wechselt alle 20 Sekunden, beeinflusst Ausbreitungsrichtung
+- **Feuerwehr** — spawnt alle 5s, löscht brennende Blöcke. 3 Spark-Treffer zerstören einen Truck (Explosion)
+- **Vignetten-Effekt** — Bildschirm verdunkelt sich und der Sichtkreis zieht sich zusammen, je näher die aktuelle Zelle dem Abbrennen ist
+- **Chain-System** — Kettenexplosionen bauen einen Multiplikator auf
 
 ---
 
 ## Installation
 
 ```bash
-pip install pygame
-python pyromania.py
+# Repo klonen
+git clone https://github.com/Srakawichi/pyromania-prototype
+cd pyromania-prototype
+
+# Virtual Environment erstellen und aktivieren
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS / Linux
+
+# Abhängigkeiten installieren
+pip install -r requirements.txt
+
+# Spiel starten
+python src/main.py
 ```
 
-Erfordert Python 3.8+ und pygame 2.x.
+Erfordert Python 3.10+

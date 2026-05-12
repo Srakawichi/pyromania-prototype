@@ -156,6 +156,7 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
 
 - [x] **Feuerwehr:** Implementiert (2026-05-12) — `src/firefighter.py`, integriert in `spark.py` + `main.py`
 - [x] **Game-Over-Screen:** Todesursache (`KRAFTSTOFF LEER` / `FEUER ERLOSCHEN`) + `MAX CHAIN xN` auf dem Endscreen (2026-05-12)
+- [x] **Vignetten-Effekt:** Proportional zur verbleibenden Brenndauer der aktuellen Zelle (2026-05-12) — `draw_vignette()` in `src/ui.py`, Aufruf in `draw_frame()` in `main.py`
 - [ ] **Regen-Event:** Globaler Debuff für Temperatur und Spread (noch nicht geplant)
 
 ---
@@ -193,3 +194,4 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
 - [x] Milestone 2 (abgeschlossen): Variable Wohndichte (dicht/locker) + Interaktive Straßen Auto+Öl-Cluster (2026-05-12)
 - [x] Milestone 3 (teilweise): Feuerwehr-KI — BFS-Navigation, Blaulicht, Löschmechanismus, Rückzug bei ≤2 brennenden Blöcken, 3 Spark-Treffer → Explosion (2026-05-12)
 - [x] Game-Over-Screen: Todesursache + Max Chain (2026-05-12)
+- [x] Vignetten-Effekt: Bildschirm verdunkelt sich + Sichtkreis zieht sich zusammen proportional zur verbleibenden `burn_t` der aktuellen Zelle — quadratische Kurve, nahtloser Übergang in Game-Over (2026-05-12)
