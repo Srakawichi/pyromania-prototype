@@ -86,7 +86,7 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
   - `temp_total = Σ (burning_cells * heat[material]) * ENERGY_TO_TEMP`
   - FUEL capped bei `FUEL_MAX`, TEMP stateless & unlimitiert
 - [x] **Flame Dash (Space):** `DASH_DIST=8` Felder, `DASH_COOLDOWN=2s`, kostet `DASH_FUEL=5`.
-- [x] **Spark Shot (F):** kostet `SPARK_FUEL=25`, Reichweite `SPARK_RANGE=10` Zellen, `SPARK_SPEED=12 Zellen/s`, `SPARK_COOLDOWN=0.5s`.
+- [x] **Spark Shot (Linksklick):** kostet `SPARK_FUEL=25`, Reichweite `SPARK_RANGE=10` Zellen, `SPARK_SPEED=12 Zellen/s`, `SPARK_COOLDOWN=0.5s`.
 - [x] **Explosion Jump:** Nur auf BURNING-Felder, Bonus `EXPLJUMP_BONUS=8` Fuel.
 
 ### ✅ Milestone 2: Stadt & Puzzle (ABGESCHLOSSEN)

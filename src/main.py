@@ -53,7 +53,7 @@ def _grid_explode(expl, grid, core):
 
 # ── input ─────────────────────────────────────────────────────────────────────
 
-def _on_keydown(key, over, core, grid, sparks):
+def _on_keydown(key, over, core, grid):
     """Returns (reset, score, chains, flash)."""
     if key == pygame.K_r:
         return True, 0, 0, 0.0
@@ -63,11 +63,6 @@ def _on_keydown(key, over, core, grid, sparks):
         s, expl = core.flame_dash(grid)
         bonus, c = _explode(expl, grid, core)
         return False, s + bonus, c, 0.4 if c else 0.0
-    if key == pygame.K_f:
-        mx, my = pygame.mouse.get_pos()
-        core_px = core.c * CELL_SIZE + CELL_SIZE // 2
-        core_py = core.r * CELL_SIZE + CELL_SIZE // 2
-        core.spark_shot(sparks, my - core_py, mx - core_px)
     return False, 0, 0, 0.0
 
 
@@ -81,13 +76,18 @@ def handle_events(held, over, core, grid, sparks):
             quit_game = True
         elif event.type == pygame.KEYDOWN:
             held[event.key] = True
-            r, s, c, f = _on_keydown(event.key, over, core, grid, sparks)
+            r, s, c, f = _on_keydown(event.key, over, core, grid)
             reset  |= r
             score  += s
             chains += c
             flash   = max(flash, f)
         elif event.type == pygame.KEYUP:
             held[event.key] = False
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not over:
+            mx, my = event.pos
+            core_px = core.c * CELL_SIZE + CELL_SIZE // 2
+            core_py = core.r * CELL_SIZE + CELL_SIZE // 2
+            core.spark_shot(sparks, my - core_py, mx - core_px)
     return quit_game, reset, score, chains, flash
 
 

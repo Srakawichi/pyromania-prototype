@@ -95,9 +95,9 @@ def draw_ui(screen, font, font_big, score, core, over, wind, wind_str, wind_time
 
     cd_x = WIN_W // 2
     draw_cooldown(screen, cd_x,     top+4,  130, 17, core.dash_cd,  DASH_COOLDOWN,  "[SPC] DASH", font)
-    draw_cooldown(screen, cd_x+140, top+4,  130, 17, core.spark_cd, SPARK_COOLDOWN, "[F]  SPARK", font)
+    draw_cooldown(screen, cd_x+140, top+4,  130, 17, core.spark_cd, SPARK_COOLDOWN, "[LMB] SPARK", font)
 
-    screen.blit(font.render("WASD: Bewegen  SHIFT: Sprint  SPC: Dash  F: Spark",
+    screen.blit(font.render("WASD: Bewegen  SHIFT: Sprint  SPC: Dash  LMB: Spark",
                             True, (90,90,90)), (cd_x, top+25))
 
     screen.blit(font.render(f"SCORE  {score:,}", True, (255,210,0)), (10, top+50))
