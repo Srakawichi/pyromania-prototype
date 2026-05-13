@@ -13,6 +13,7 @@ class Spark:
         self.vc   = dc / mag
         self.dist = 0.0
         self.dead = False
+        self._tp  = None  # first BURNING cell encountered — teleport target
 
     def update(self, dt, grid, fire_trucks=()):
         """Returns (score, explosions, teleport_pos, hit_truck).
@@ -25,27 +26,36 @@ class Spark:
         self.dist += move
         if self.dist >= SPARK_RANGE:
             self.dead = True
-            return 0, [], None, None
+            return 0, [], self._tp, None
         if self.dist < 1.0:
             return 0, [], None, None
         r, c = int(self.fr), int(self.fc)
         if not (0 <= r < ROWS and 0 <= c < COLS):
             self.dead = True
-            return 0, [], None, None
+            return 0, [], self._tp, None
+
+        # Truck collision: proximity-based to survive float-to-int rounding edge cases
         for truck in fire_trucks:
-            if not truck.dead and (r, c) in truck.cells:
-                self.dead = True
-                return 0, [], None, truck
+            if truck.dead:
+                continue
+            for tr, tc in truck.cells:
+                if abs(self.fr - tr - 0.5) < 0.75 and abs(self.fc - tc - 0.5) < 0.75:
+                    self.dead = True
+                    return 0, [], None, truck
+
         cell = grid[r][c]
         if cell.state == BURNING:
-            self.dead = True
-            return 0, [], (r, c), None
+            # Pass through — spark is fire, fire doesn't stop fire.
+            # Record the first burning cell hit as the teleport destination.
+            if self._tp is None:
+                self._tp = (r, c)
+            return 0, [], None, None
         if cell.state == BURNABLE:
             ignite(cell)
             self.dead = True
             m    = MATS.get(cell.material, {})
             expl = [(r, c, m["exp_r"])] if m.get("exp_r", 0) > 0 else []
-            return m.get("points", 0), expl, None, None
+            return m.get("points", 0), expl, self._tp, None
         return 0, [], None, None
 
     def draw(self, screen):

@@ -15,8 +15,8 @@ Modularität: Halte Pygame-Events (Input), Spiellogik (Core) und Rendering (UI) 
 - **Key-Entity:** `Fire Core` (Zentrales Spieler-Objekt).
 
 ## 📍 Aktueller Status
-- **Phase:** Milestone 2 (Combo-System)
-- **Aktueller Fokus:** Chain-Meter & Multiplikator
+- **Phase:** Prototyp abgeschlossen (Python/Pygame)
+- **Nächster Schritt:** Neuimplementierung in Unity / C#
 
 ---
 
@@ -24,33 +24,38 @@ Modularität: Halte Pygame-Events (Input), Spiellogik (Core) und Rendering (UI) 
 
 Die Materialien sind nach Temperaturanforderung gestaffelt. Die Legende im UI zeigt live, was bei deiner aktuellen Temperatur erreichbar ist.
 
-| Material    | Min-Temp | Energieeinheiten | Temperatureinheiten | Besonderheit |
-|-------------|----------|------------------|---------------------|--------------|
-| Gras        | 10       | 1                | 5                   | Schnell entflammbar |
-| Öl          | 20       | 2                | 10                   | Explosion (Radius 4) |
-| Baum        | 28       | 5                | 14                   | Brennt lange |
-| Holz        | 35       | 6                | 17                   | Stabiler Midgame |
-| Auto        | 42       | 10               | 21                   | Explosion (Radius 1) |
-| Haus        | 55       | 15               | 30                   | Brennt sehr lange |
-| Tankstelle  | 20       | 25               | 40                   | Explosion (Radius 8) |
-| Schrott     | 90       | 18               | 32                   | Schwer entzündbar, High-Risk-High-Reward, Explosion (Radius 2) |
+| Material   | Min-Temp | Energy | Heat | Burn-Time | Spread | Punkte | Besonderheit                            |
+|------------|----------|--------|------|-----------|--------|--------|-----------------------------------------|
+| Gras       | 14°C     | 1      | 0.9  | 7 s       | 0.18   | 5      | Schnell entflammbar                     |
+| Öl         | 280°C    | 2      | 1.8  | 8 s       | 0.75   | 50     | Explosion (Radius 4)                    |
+| Baum       | 400°C    | 5      | 2.4  | 16 s      | 0.12   | 15     | Brennt lange                            |
+| Holz       | 480°C    | 6      | 3.0  | 13 s      | 0.18   | 20     | Stabiler Midgame                        |
+| Auto       | 650°C    | 10     | 4.0  | 10 s      | 0.22   | 60     | Explosion (Radius 1)                    |
+| Haus       | 850°C    | 15     | 5.6  | 26 s      | 0.08   | 100    | Brennt sehr lange                       |
+| Tankstelle | 350°C    | 25     | 9.0  | 8 s       | 1.0    | 500    | Explosion (Radius 8)                    |
+| Schrott    | 900°C    | 18     | 6.4  | 22 s      | 0.04   | 200    | High-Risk-High-Reward, Explosion (Radius 2) |
+
+> **Energy** → FUEL-Gewinn/s · Zelle × `ENERGY_TO_FUEL` (0.025)  
+> **Heat** → TEMP-Beitrag/Zelle × `ENERGY_TO_TEMP` (36.0)  
+> **Spread** → Basis-Wahrscheinlichkeit/Frame (Pull-based, × Wind-Multiplikator)
 
 ---
 
 ## Ressourcen-Formeln (sekündlicher Tick)
 
-FUEL = Σ (burning_cells * energy[material]) * ENERGY_TO_FUEL
-FUEL -= action_costs  # Dash, Sprint, Spark Shot
-if FUEL <= 0 → Game Over
+FUEL -= FUEL_DECAY * dt                              # 2.0 / Sekunde flat drain
+FUEL += Σ (burning_cells * energy[material]) * ENERGY_TO_FUEL * dt
+FUEL -= action_costs  # Dash (5), Sprint (8/s), Spark (25)
+FUEL = clamp(FUEL, 0, FUEL_MAX=100)
 
-temp_total = Σ (burning_cells * energy[material]) * ENERGY_TO_TEMP
+TEMP = TEMP_BASE(30) + Σ (burning_cells * heat[material]) * ENERGY_TO_TEMP(36.0)
 
-Beide 1x/Sekunde neu berechnet (AURA_INTERVAL).
-FUEL: wird neu gesetzt (nicht aufaddiert), capped bei FUEL_MAX (100.0) — UI: Balken/Skala
-TEMP: wird neu gesetzt, unlimitiert — UI: Zahl in Celsius (z.B. "4300°C")
+FUEL wird pro Frame aktualisiert, capped bei FUEL_MAX (100.0) — UI: Balken
+TEMP wird pro Frame neu gesetzt, unlimitiert — UI: Zahl in °C (z.B. "4300°C")
 
-burning_cells == 0 → FUEL = 0 → Game Over
-FUEL_DECAY entfällt.
+burning_cells == 0 → fuel_e = 0, aber FUEL_DECAY läuft weiter → bald Game Over
+FUEL <= 0 → Game Over "KRAFTSTOFF LEER"
+Fire Core nicht auf BURNING-Zelle → Game Over "FEUER ERLOSCHEN"
 
 ---
 
@@ -74,13 +79,14 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
 - [x] **Movement:** WASD + Shift (Sprint, kostet `SPRINT_FUEL_PS`). Spawn auf `dry_grass`. Fire Core bewegt sich nur auf BURNING-Feldern.
 - [x] **Game Over:** Wenn Fire Core nicht auf einem brennenden Feld steht.
 - [x] **Spark = Teleport:** Trifft BURNING → teleportiert Core dorthin. Kostet `SPARK_FUEL=25`. Trifft BURNABLE → entzündet, kein Teleport.
+- [x] **Spark-Richtung = Mauszeiger:** Spark Shot fliegt zur Mausposition, nicht mehr in WASD-Blickrichtung (2026-05-13) — Richtungsvektor wird in `_on_keydown` aus `pygame.mouse.get_pos()` berechnet und an `spark_shot(sparks, dr, dc)` übergeben. Visuelles Fadenkreuz am Mauszeiger (nur im Grid-Bereich).
 - [x] **Heat Aura:** Jede Sekunde Prüfung umliegender Zellen (`HEAT_RADIUS=3`, distanzabhängige Chance).
 - [x] **Ressourcen-Tick (1x/Sekunde):**
   - `fuel_regen = Σ (burning_cells * energy[material]) * ENERGY_TO_FUEL`
   - `temp_total = Σ (burning_cells * heat[material]) * ENERGY_TO_TEMP`
   - FUEL capped bei `FUEL_MAX`, TEMP stateless & unlimitiert
-- [x] **Flame Dash (Space):** `DASH_DIST=3` Felder, `DASH_COOLDOWN=2s`, kostet `DASH_FUEL=5`.
-- [x] **Spark Shot (F):** kostet `SPARK_FUEL=25`, Reichweite `SPARK_RANGE=10`, `SPARK_COOLDOWN=0.5s`.
+- [x] **Flame Dash (Space):** `DASH_DIST=8` Felder, `DASH_COOLDOWN=2s`, kostet `DASH_FUEL=5`.
+- [x] **Spark Shot (F):** kostet `SPARK_FUEL=25`, Reichweite `SPARK_RANGE=10` Zellen, `SPARK_SPEED=12 Zellen/s`, `SPARK_COOLDOWN=0.5s`.
 - [x] **Explosion Jump:** Nur auf BURNING-Felder, Bonus `EXPLJUMP_BONUS=8` Fuel.
 
 ### ✅ Milestone 2: Stadt & Puzzle (ABGESCHLOSSEN)
@@ -110,7 +116,7 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
 **Spawning**
 - Alle `5s` ein neues Feuerwehrauto, erstes erscheint `5s` nach Spielstart
 - Spawn-Position: zufällige Straßenzelle am Kartenrand, Richtung Kartenmitte
-- Max. gleichzeitig aktive Trucks: `10`
+- Max. gleichzeitig aktive Trucks: `5`
 
 **Bewegung**
 - Ausschließlich auf Straßenzellen (`is_street(r, c) == True`)
@@ -157,7 +163,8 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
 - [x] **Feuerwehr:** Implementiert (2026-05-12) — `src/firefighter.py`, integriert in `spark.py` + `main.py`
 - [x] **Game-Over-Screen:** Todesursache (`KRAFTSTOFF LEER` / `FEUER ERLOSCHEN`) + `MAX CHAIN xN` auf dem Endscreen (2026-05-12)
 - [x] **Vignetten-Effekt:** Proportional zur verbleibenden Brenndauer der aktuellen Zelle (2026-05-12) — `draw_vignette()` in `src/ui.py`, Aufruf in `draw_frame()` in `main.py`
-- [ ] **Regen-Event:** Globaler Debuff für Temperatur und Spread (noch nicht geplant)
+- [~] **Chain-Zähler:** `chains`-Variable zählt Explosions-Events (Endscreen: `MAX CHAIN xN`). **Kein Score-Multiplikator** — Chains beeinflussen den Score nicht, nur die Anzeige.
+- [ ] **Regen-Event:** Globaler Debuff für Temperatur und Spread (für Unity-Version geplant)
 
 ---
 
@@ -186,12 +193,23 @@ Das Feuer breitet sich nicht automatisch aus. Du musst es aktiv lenken und mit n
 
 ---
 
-## ✅ Erledigt
+## ✅ Erledigt (Python-Prototyp)
 - [x] Architekturplan finalisiert.
 - [x] Milestone 1: Feuer als Creature (abgeschlossen 2026-05-11)
 - [x] Feuerausbreitung: Pull-based Spread + Auto-Explosionsradius reduziert (2026-05-11)
-- [x] Milestone 2 (teilweise): 4 strukturierte Zonen + Schrott-Material + Öllachen (2026-05-11)
-- [x] Milestone 2 (abgeschlossen): Variable Wohndichte (dicht/locker) + Interaktive Straßen Auto+Öl-Cluster (2026-05-12)
+- [x] Milestone 2: 5 strukturierte Zonen + Schrott + Öllachen + Auto-Öl-Cluster (2026-05-12)
 - [x] Milestone 3 (teilweise): Feuerwehr-KI — BFS-Navigation, Blaulicht, Löschmechanismus, Rückzug bei ≤2 brennenden Blöcken, 3 Spark-Treffer → Explosion (2026-05-12)
 - [x] Game-Over-Screen: Todesursache + Max Chain (2026-05-12)
-- [x] Vignetten-Effekt: Bildschirm verdunkelt sich + Sichtkreis zieht sich zusammen proportional zur verbleibenden `burn_t` der aktuellen Zelle — quadratische Kurve, nahtloser Übergang in Game-Over (2026-05-12)
+- [x] Vignetten-Effekt: Bildschirm verdunkelt sich + Sichtkreis zieht sich zusammen proportional zur verbleibenden `burn_t` (2026-05-12)
+- [x] Spark-Richtung: Mauszeiger + visuelles Fadenkreuz (2026-05-13)
+- [x] Dokumentation auf Code-Stand gebracht (2026-05-13)
+
+## 🎯 Unity-Rewrite — Hinweise für die Neuimplementierung
+
+- **Grid:** `int[,]` oder `Cell[,]` als 2D-Array (60×45), kein MonoBehaviour pro Zelle
+- **Fire Core:** eigene `MonoBehaviour`-Komponente, steuert sich selbst via `Input.GetKey`
+- **Simulation (Spread):** Pull-based bleibt — `Update()` iteriert über alle Zellen, kein `Coroutine`-Spam
+- **Firefighter:** `NavMeshAgent` auf einem Straßen-Mesh **oder** eigener BFS (einfacher, da Grid-basiert)
+- **Rendering:** `Tilemap` (Performance) oder `MeshRenderer` pro Zelle für volles Material-Control
+- **Wind:** einfacher `float2` Richtungsvektor, kein Physics-Layer nötig
+- **UI:** Unity UI Toolkit oder Canvas — FUEL-Bar, TEMP-Anzeige, Cooldown-Balken

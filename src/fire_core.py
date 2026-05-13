@@ -127,13 +127,13 @@ class FireCore:
         self.dash_cd = DASH_COOLDOWN
         return score, explosions
 
-    def spark_shot(self, sparks):
+    def spark_shot(self, sparks, dr, dc):
         if self.spark_cd > 0 or self.fuel < SPARK_FUEL:
             return
-        if self.last_dr == 0 and self.last_dc == 0:
+        if dr == 0 and dc == 0:
             return
         self.fuel -= SPARK_FUEL
-        sparks.append(Spark(self.r, self.c, self.last_dr, self.last_dc))
+        sparks.append(Spark(self.r, self.c, dr, dc))
         self.spark_cd = SPARK_COOLDOWN
 
     def explosion_jump(self, er, ec, grid):

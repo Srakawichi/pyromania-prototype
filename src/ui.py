@@ -49,13 +49,13 @@ def draw_vignette(screen, cx, cy, ratio):
     The gradient is quadratic so the effect stays subtle until the last ~30% of burn time.
     """
     t = max(0.0, 1.0 - ratio)
-    t2 = t * t  # quadratic: barely noticeable early, accelerates near the end
-    darkness = int(200 * t2)
+    t2 = t ** 0.75  # sub-linear: clearly visible from ~40% burn time remaining
+    darkness = int(240 * t2)
     if darkness < 4:
         return
 
-    # Visible circle: shrinks from 520 px (covers the grid) to 2 cells wide
-    max_r = 520
+    # Visible circle: shrinks from 460 px to 2 cells wide
+    max_r = 460
     min_r = CELL_SIZE * 2
     visible_r = max(min_r, int(max_r + (min_r - max_r) * t2))
 

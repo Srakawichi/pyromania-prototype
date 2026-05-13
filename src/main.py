@@ -3,10 +3,10 @@ import random
 import sys
 
 from constants import (
-    WIN_W, WIN_H, CELL_SIZE, ROWS, COLS,
+    WIN_W, WIN_H, GRID_H, CELL_SIZE, ROWS, COLS,
     WIND_INTERVAL, WIND_DIRS, WIND_STRS,
     FUEL_MAX, FUEL_DECAY, TEMP_BASE,
-    ENERGY_TO_FUEL, ENERGY_TO_TEMP, BURNING, MATS,
+    ENERGY_TO_FUEL, ENERGY_TO_TEMP, BURNING, MATS, SPARK_FUEL,
 )
 from worldgen import generate_city, find_start
 from fire_core import FireCore
@@ -64,7 +64,10 @@ def _on_keydown(key, over, core, grid, sparks):
         bonus, c = _explode(expl, grid, core)
         return False, s + bonus, c, 0.4 if c else 0.0
     if key == pygame.K_f:
-        core.spark_shot(sparks)
+        mx, my = pygame.mouse.get_pos()
+        core_px = core.c * CELL_SIZE + CELL_SIZE // 2
+        core_py = core.r * CELL_SIZE + CELL_SIZE // 2
+        core.spark_shot(sparks, my - core_py, mx - core_px)
     return False, 0, 0, 0.0
 
 
@@ -117,7 +120,7 @@ def update_logic(dt, grid, core, held, sparks, wind, wind_str, fire_trucks):
             core.r, core.c = teleport_pos
         if hit_truck and not hit_truck.dead:
             if hit_truck.hit():
-                score += apply_explosion(grid, hit_truck.cells[0][0], hit_truck.cells[0][1], 1)
+                score += apply_explosion(grid, hit_truck.cells[0][0], hit_truck.cells[0][1], 6)
         bonus, c = _explode(expl, grid, core)
         score += bonus; chains += c; flash = max(flash, 0.4 if c else 0.0)
     sparks[:] = [sp for sp in sparks if not sp.dead]
@@ -153,6 +156,14 @@ def draw_frame(screen, font, font_big, grid, sparks, core, fire_trucks, score, o
     cx_px = core.c * CELL_SIZE + CELL_SIZE // 2
     cy_px = core.r * CELL_SIZE + CELL_SIZE // 2
     draw_vignette(screen, cx_px, cy_px, vignette_ratio)
+
+    if not over:
+        mx, my = pygame.mouse.get_pos()
+        if 0 <= my < GRID_H:
+            ready = core.spark_cd <= 0 and core.fuel >= SPARK_FUEL
+            col   = (255, 230, 60) if ready else (130, 110, 40)
+            pygame.draw.line(screen, col, (mx - 6, my), (mx + 6, my), 1)
+            pygame.draw.line(screen, col, (mx, my - 6), (mx, my + 6), 1)
 
     draw_ui(screen, font, font_big, score, core, over,
             wind, wind_str, wind_timer, flash, chains, death_cause)
